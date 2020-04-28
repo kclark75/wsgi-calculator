@@ -47,9 +47,15 @@ def add(*args):
 
     # TODO: Fill sum with the correct value, based on the
     # args provided.
-    sum = "0"
+    sum = 0
 
+    for num in args:
+        if not str(num).isdigit():
+            return False
+        else:
+            sum += int(num)
     return sum
+
 
 # TODO: Add functions for handling more arithmetic operations.
 
@@ -58,6 +64,22 @@ def resolve_path(path):
     Should return two values: a callable and an iterable of
     arguments.
     """
+    funcs = {
+        '': books,
+        'book': book,
+    }
+
+    path = path.strip('/').split('/')
+
+    func_name = path[0]
+    args = path[1:]
+
+    try:
+        func = funcs[func_name]
+    except KeyError:
+        raise NameError
+
+    return func, args
 
     # TODO: Provide correct values for func and args. The
     # examples provide the correct *syntax*, but you should
@@ -76,7 +98,26 @@ def application(environ, start_response):
     #
     # TODO (bonus): Add error handling for a user attempting
     # to divide by zero.
-    pass
+    headers = [("Content-type", "text/html")]
+    try:
+        path = environ.get('PATH_INFO', None)
+        if path is None:
+            raise NameError
+        func, args = resolve_path(path)
+        body = func(*args)
+        status = "200 OK"
+    except NameError:
+        status = "404 Not Found"
+        body = "<h1>Not Found</h1>"
+    except Exception:
+        status = "500 Internal Server Error"
+        body = "<h1>Internal Server Error</h1>"
+        print(traceback.format_exc())
+    finally:
+        headers.append(('Content-length', str(len(body))))
+        start_response(status, headers)
+        return [body.encode('utf8')]
+
 
 if __name__ == '__main__':
     # TODO: Insert the same boilerplate wsgiref simple
